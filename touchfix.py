@@ -10,14 +10,21 @@ import time
 
 TOUCH_PANEL_NAME = "Melfas LGD AIT Touch Controller" # This is my tablet's touch panel according to xinput. Edit it.
 VALID_WINDOW_TYPES = ["_NET_WM_WINDOW_TYPE_POPUP_MENU"]
+LEFT_CLICK_BUTTON = 1
+RIGHT_CLICK_BUTTON = 3
+DISABLED_APPS = ["xfce4-panel"]
+
 TOUCH_EVENT_CODE = 330
+TOUCH_VALUE_UP = 0
+TOUCH_VALUE_DOWN = 1
+
+RIGHT_CLICK_EMU_TIME = 0.5
+RIGHT_CLICK_EMU_DEADZONE = 70
+
+
 display = Display()
 screen = display.screen()
-left_click_button = 1
-right_click_button = 3
-upto_ten_fingers_touch_time = [None, None, None, None, None, None, None, None, None, None]
 
-FIX_APPS = ["xfce4-panel"]
 
 fixflag = False
 
@@ -81,38 +88,38 @@ for event in device.read_loop():
         print(titles)
 
         if len(titles) != 0:
-            if common_member(FIX_APPS, titles):
+            if common_member(DISABLED_APPS, titles):
                 fixflag = True
             else:
                 fixflag = False
 
         print(fixflag)
         
-        if event.value == 0 and touch_window_type in VALID_WINDOW_TYPES and not fixflag:
-            fake_input(display, X.ButtonPress, left_click_button)
-            fake_input(display, X.ButtonRelease, left_click_button)
+        if event.value == TOUCH_VALUE_UP and touch_window_type in VALID_WINDOW_TYPES and not fixflag:
+            fake_input(display, X.ButtonPress, LEFT_CLICK_BUTTON)
+            fake_input(display, X.ButtonRelease, LEFT_CLICK_BUTTON)
             display.sync()
 
         
-        if event.value == 1:
+        if event.value == TOUCH_VALUE_DOWN:
             time_a = time.time()
             pos_a = touch_pos
             
-        if event.value == 0:
+        if event.value == TOUCH_VALUE_UP:
             time_b = time.time()
             pos_b = touch_pos
 
             print("time:", time_b - time_a)
             if time_b - time_a > 0.3:
                 print("dst:", (pos_a[0]-pos_b[0])*(pos_a[0]-pos_b[0]) + (pos_a[1]-pos_b[1])*(pos_a[1]-pos_b[1]))
-                if (pos_a[0]-pos_b[0])*(pos_a[0]-pos_b[0]) + (pos_a[1]-pos_b[1])*(pos_a[1]-pos_b[1]) < 2500:
+                if (pos_a[0]-pos_b[0])*(pos_a[0]-pos_b[0]) + (pos_a[1]-pos_b[1])*(pos_a[1]-pos_b[1]) < RIGHT_CLICK_EMU_DEADZONE*RIGHT_CLICK_EMU_DEADZONE:
                     print("right click detected")
 
                     if(common_member("chromium", titles)):
                         continue
                     
-                    fake_input(display, X.ButtonPress, right_click_button)
-                    fake_input(display, X.ButtonRelease, right_click_button)
+                    fake_input(display, X.ButtonPress, RIGHT_CLICK_BUTTON)
+                    fake_input(display, X.ButtonRelease, RIGHT_CLICK_BUTTON)
                     display.sync()
 
     except:
